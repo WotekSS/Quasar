@@ -131,6 +131,18 @@ namespace Quasar.Server.Models
             }
         }
 
+        public static string TelegramBotToken
+        {
+            get { return ReadValueSafe("TelegramBotToken"); }
+            set { WriteValue("TelegramBotToken", value); }
+        }
+
+        public static string TelegramChatId
+        {
+            get { return ReadValueSafe("TelegramChatId"); }
+            set { WriteValue("TelegramChatId", value); }
+        }
+
         public static string SaveFormat
         {
             get

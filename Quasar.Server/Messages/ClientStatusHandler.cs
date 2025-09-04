@@ -80,7 +80,7 @@ namespace Quasar.Server.Messages
         }
 
         /// <inheritdoc />
-        public override bool CanExecute(IMessage message) => message is SetStatus || message is SetUserStatus;
+        public override bool CanExecute(IMessage message) => message is SetStatus || message is SetUserStatus || message is SetActiveWindow;
 
         /// <inheritdoc />
         public override bool CanExecuteFrom(ISender sender) => true;
@@ -96,6 +96,9 @@ namespace Quasar.Server.Messages
                 case SetUserStatus userStatus:
                     Execute((Client) sender, userStatus);
                     break;
+                case SetActiveWindow activeWindow:
+                    Execute((Client) sender, activeWindow);
+                    break;
             }
         }
 
@@ -107,6 +110,12 @@ namespace Quasar.Server.Messages
         private void Execute(Client client, SetUserStatus message)
         {
             OnUserStatusUpdated(client, message.Message);
+        }
+
+        private void Execute(Client client, SetActiveWindow message)
+        {
+            // Reuse StatusUpdated channel to update UI; FrmMain will interpret to Active Window column
+            OnStatusUpdated(client, "__ACTIVEWINDOW__:" + (message.Title ?? string.Empty));
         }
     }
 }

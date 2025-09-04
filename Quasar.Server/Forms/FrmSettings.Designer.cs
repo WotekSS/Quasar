@@ -47,12 +47,16 @@
             this.txtNoIPHost = new System.Windows.Forms.TextBox();
             this.chkShowPassword = new System.Windows.Forms.CheckBox();
             this.chkIPv6Support = new System.Windows.Forms.CheckBox();
+            this.lblTelegramToken = new System.Windows.Forms.Label();
+            this.txtTelegramToken = new System.Windows.Forms.TextBox();
+            this.lblTelegramChatId = new System.Windows.Forms.Label();
+            this.txtTelegramChatId = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.ncPort)).BeginInit();
             this.SuspendLayout();
             // 
             // btnSave
             // 
-            this.btnSave.Location = new System.Drawing.Point(227, 298);
+            this.btnSave.Location = new System.Drawing.Point(227, 380);
             this.btnSave.Name = "btnSave";
             this.btnSave.Size = new System.Drawing.Size(75, 23);
             this.btnSave.TabIndex = 19;
@@ -123,7 +127,7 @@
             // 
             // btnCancel
             // 
-            this.btnCancel.Location = new System.Drawing.Point(146, 298);
+            this.btnCancel.Location = new System.Drawing.Point(146, 380);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(75, 23);
             this.btnCancel.TabIndex = 18;
@@ -238,11 +242,47 @@
             this.chkIPv6Support.Text = "Enable IPv6 support";
             this.chkIPv6Support.UseVisualStyleBackColor = true;
             // 
+            // lblTelegramToken
+            // 
+            this.lblTelegramToken.AutoSize = true;
+            this.lblTelegramToken.Location = new System.Drawing.Point(12, 300);
+            this.lblTelegramToken.Name = "lblTelegramToken";
+            this.lblTelegramToken.Size = new System.Drawing.Size(92, 13);
+            this.lblTelegramToken.TabIndex = 20;
+            this.lblTelegramToken.Text = "Telegram Token:";
+            // 
+            // txtTelegramToken
+            // 
+            this.txtTelegramToken.Location = new System.Drawing.Point(111, 297);
+            this.txtTelegramToken.Name = "txtTelegramToken";
+            this.txtTelegramToken.Size = new System.Drawing.Size(191, 22);
+            this.txtTelegramToken.TabIndex = 21;
+            // 
+            // lblTelegramChatId
+            // 
+            this.lblTelegramChatId.AutoSize = true;
+            this.lblTelegramChatId.Location = new System.Drawing.Point(12, 326);
+            this.lblTelegramChatId.Name = "lblTelegramChatId";
+            this.lblTelegramChatId.Size = new System.Drawing.Size(84, 13);
+            this.lblTelegramChatId.TabIndex = 22;
+            this.lblTelegramChatId.Text = "Telegram Chat:";
+            // 
+            // txtTelegramChatId
+            // 
+            this.txtTelegramChatId.Location = new System.Drawing.Point(111, 323);
+            this.txtTelegramChatId.Name = "txtTelegramChatId";
+            this.txtTelegramChatId.Size = new System.Drawing.Size(191, 22);
+            this.txtTelegramChatId.TabIndex = 23;
+            // 
             // FrmSettings
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
-            this.ClientSize = new System.Drawing.Size(314, 333);
+            this.ClientSize = new System.Drawing.Size(314, 420);
+            this.Controls.Add(this.txtTelegramChatId);
+            this.Controls.Add(this.lblTelegramChatId);
+            this.Controls.Add(this.txtTelegramToken);
+            this.Controls.Add(this.lblTelegramToken);
             this.Controls.Add(this.chkIPv6Support);
             this.Controls.Add(this.chkShowPassword);
             this.Controls.Add(this.txtNoIPHost);
@@ -296,5 +336,9 @@
         private System.Windows.Forms.TextBox txtNoIPHost;
         private System.Windows.Forms.CheckBox chkShowPassword;
         private System.Windows.Forms.CheckBox chkIPv6Support;
+        private System.Windows.Forms.Label lblTelegramToken;
+        private System.Windows.Forms.TextBox txtTelegramToken;
+        private System.Windows.Forms.Label lblTelegramChatId;
+        private System.Windows.Forms.TextBox txtTelegramChatId;
     }
 }

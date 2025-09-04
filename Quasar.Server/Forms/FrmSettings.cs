@@ -35,6 +35,8 @@ namespace Quasar.Server.Forms
             txtNoIPHost.Text = Settings.NoIPHost;
             txtNoIPUser.Text = Settings.NoIPUsername;
             txtNoIPPass.Text = Settings.NoIPPassword;
+            txtTelegramToken.Text = Settings.TelegramBotToken;
+            txtTelegramChatId.Text = Settings.TelegramChatId;
         }
 
         private ushort GetPortSafe()
@@ -109,6 +111,8 @@ namespace Quasar.Server.Forms
             Settings.NoIPHost = txtNoIPHost.Text;
             Settings.NoIPUsername = txtNoIPUser.Text;
             Settings.NoIPPassword = txtNoIPPass.Text;
+            Settings.TelegramBotToken = txtTelegramToken.Text;
+            Settings.TelegramChatId = txtTelegramChatId.Text;
             this.Close();
         }
 

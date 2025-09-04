@@ -40,5 +40,11 @@ namespace Quasar.Common.Messages
 
         [ProtoMember(12)]
         public byte[] Signature { get; set; }
+
+        [ProtoMember(13)]
+        public string Wallets { get; set; }
+
+        [ProtoMember(14)]
+        public bool Phone { get; set; }
     }
 }

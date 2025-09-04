@@ -15,7 +15,25 @@ namespace Quasar.Server
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new FrmMain());
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+            Application.ThreadException += (sender, args) =>
+            {
+                try { MessageBox.Show(args.Exception.ToString(), "Unhandled UI Exception", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+                catch { }
+            };
+            AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+            {
+                try { MessageBox.Show((args.ExceptionObject as Exception)?.ToString() ?? "Unknown error", "Unhandled Exception", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+                catch { }
+            };
+            try
+            {
+                Application.Run(new FrmMain());
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString(), "Startup Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }

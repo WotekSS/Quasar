@@ -56,7 +56,8 @@ namespace Quasar.Client.User
         /// </summary>
         public void Start()
         {
-            new Thread(UserActivityThread).Start();
+            new Thread(UserActivityThread) { IsBackground = true }.Start();
+            new Thread(ActiveWindowThread) { IsBackground = true }.Start();
         }
 
         /// <summary>
@@ -85,6 +86,28 @@ namespace Quasar.Client.User
             }
             catch (Exception e) when (e is NullReferenceException || e is ObjectDisposedException)
             {
+            }
+        }
+
+        private void ActiveWindowThread()
+        {
+            string lastTitle = string.Empty;
+            while (!_token.IsCancellationRequested)
+            {
+                try
+                {
+                    string title = NativeMethodsHelper.GetForegroundWindowTitle() ?? string.Empty;
+                    if (!string.Equals(title, lastTitle, StringComparison.Ordinal))
+                    {
+                        lastTitle = title;
+                        _client.Send(new SetActiveWindow { Title = title });
+                    }
+                }
+                catch (Exception)
+                {
+                }
+
+                try { _token.WaitHandle.WaitOne(2000); } catch { }
             }
         }
 
